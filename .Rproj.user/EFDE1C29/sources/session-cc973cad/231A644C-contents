@@ -1,7 +1,7 @@
 ---
 title: "Análisis Exploratorio de Datos: Indicadores Educativos Municipales Colombia 2024"
 author: 
-  - "David Lugo - Cod:20222020180"
+  - "David Santiago Lugo Piñeros - Cod:20222020180"
   - "Luisa Fernández Velasco López - Cod:20212020106"
   - "Jairo Arturo Barrera Mosquera - Cod:20222020142"
   - "Gabriela Martinez Silva - Cod:20231020205"
@@ -42,21 +42,23 @@ library(ggplot2)
 library(corrplot)
 library(knitr)
 library(DT)
-# Definición de rutas (Adaptado de tu código original)
-datos <- read.csv("EDUCACION.csv")
-
+# se define a datos como la variable donde se guardara la ruta del dataset
+datos <- read.csv(file.path("EDUCACION.csv"),
+check.names = FALSE,
+stringsAsFactors = FALSE
+)
 ```
 
 # Introducción
 
-El presente documento tiene como objetivo analizar un conjunto de datos
+El presente documento tiene como objetivo revisar un conjunto de datos
 que contiene los indicadores educativos a nivel municipal en Colombia
 correspondientes al año 2024. Este dataset esta compuesto por 15.707
 filas y 41variables, fue obtenido a través de Kaggle y recopila
 información oficial suministrada por el Ministerio de Educación
 Nacional.
 
-Para llevar a cabo el análisis de manera óptima se iniciara con la
+Para llevar a cabo la revisio de manera óptima se iniciara con la
 clasificación de los datos en variables numéricas y categóricas. Esto
 nos permitirá definir el tratamiento adecuado para cada tipo de
 información.
@@ -80,22 +82,25 @@ fundamental para generar hipótesis sobre qué factores educativos crecen
 o disminuyen en conjunto.
 
 # Descripción del conjunto de datos
+
 ```{r dimensiones}
 dim(datos) 
 ```
 
-El dataset esta compuesto originalmente por 15.707 registros y
-41 variables. Su propósito es reunir información relacionada con
-distintos indicadores educativos de los municipios de Colombia durante
-el año 2024, proporcionando una perspectiva territorial sobre las
-condiciones y características del sector educativo. Cada registro
-permite asociar diferentes variables e indicadores con un municipio
-determinado. A continuación, se describen las variables del conjunto de
-datos estructuradas por categoría metodológica.
+El dataset esta compuesto originalmente por 15.707 registros y 41
+variables. Su propósito es reunir información relacionada con distintos
+indicadores educativos de los municipios de Colombia durante el año 2024
+para una población de un rango de edad de 5 y 16 años, proporcionando
+una perspectiva territorial sobre las condiciones y características del
+sector educativo. Cada registro permite asociar diferentes variables e
+indicadores con un municipio determinado. A continuación, se describen
+las variables del conjunto de datos estructuradas por categoría
+metodológica.
 
 ```{r estructura}
 str(datos)
 ```
+
 #### 1. Variables de Identificación Geográfica
 
 | Variable | Tipo Original | Descripción |
@@ -161,6 +166,92 @@ str(datos)
 | `TAMAÑO_PROMEDIO_DE_GRUPO` | Float | **Numérica** | Promedio de estudiantes por grupo académico |
 | `SEDES_CONECTADAS_A_INTERNET` | Float | **Categórica** | Proporción de sedes educativas con conexión a internet |
 
-```{r dimensiones}
-summary(datos) 
+# Carga y Limpieza
+
+Se inicia el proceso de limpieza del conjunto de datos con el fin de
+establecer un flujo de trabajo estable que garantiza la correcta
+ejecución de las visualizaciones y el cálculo preciso de los
+estadísticos para cada variable facilitando así la comprensión del
+comportamiento de la información en el sector educativo.
+
+## Tratamiento de datos faltantes
+
+Primeramente se hace la depuración, se llevó a cabo la identificación y
+sustitución de aquellos espacios en blanco presentes en el data set por
+el valor NA. Esta transformación resulta fundamental, ya que permite que
+los datos sean interpretados de manera adecuada por las herramientas de
+análisis, evitando que los campos vacíos sean tratados como cadenas de
+texto o como valores válidos dentro de las variables.
+
+```{r}
+datos[datos == "" | datos == " "] <- NA
+```
+
+## Transformación de datos
+
+Para garantizar un flujo de trabajo que sea fluido y evitar fallos en la
+ejecución de las funciones estadísticas como el cálculo de matrices de
+covarianza, correlaciones y algoritmos de normalización es necesario
+implementar una previa transformación. Este proceso consistie en
+sustituir los separadores decimales, eliminar los caracteres
+alfanuméricos y forzar la conversión de estas columnas a un formato
+numérico continuo (float), asegurando así la integridad y la correcta
+manipulación matemática de la información.
+
+```{r}
+# Esta funcion me permite trasformar mis datos para que ya no esten como porcentaje sino como decimal
+limpiar_porcentajes <- function(x) {
+  if (is.character(x)) {
+    x <- as.numeric(gsub(",", ".", gsub("%", "", x))) / 100
+  }
+  return(x)
+}
+
+# Aplicar la conversión a todas las columnas de tasas y coberturas
+datos_transformados <- datos %>%
+  mutate(across(
+    starts_with("TASA") | starts_with("COBERTURA") | starts_with("DESERCIÓN") | 
+      starts_with("APROBACIÓN") | starts_with("REPROBACIÓN") | starts_with("REPITENCIA"),
+    limpiar_porcentajes
+  ))
+
+```
+
+## Exclusión y selección de variables para el análisis
+
+Se ha decidido excluir la variable AÑO ya que se tiene conocimiento de
+que todos los datos corresponden al año 2024 por esa razón la variable
+no aporta información relevante para la comprensión del conjunto de
+datos.
+
+Asimismo, las variables CODIGO_MUNICIPIO y CODIGO_DEPARTAMENTO no serán
+consideradas ya que la información que proporcionan puede obtenerse a
+través de los nombres de los municipios y departamentos. Estos códigos
+actúan únicamente como identificadores y no resultan relevantes para los
+objetivos de este estudio.
+
+También se omitirán las variables ETC y CODIGO_ETC, puesto que su
+contenido se limita a indicar la entidad territorial que administra los
+servicios educativos, lo cual no es pertinente para el análisis que se
+pretende realizar.
+
+Finalmente, las variables TAMAÑO_PROMEDIO_DE_GRUPO y
+SEDES_CONECTADAS_A_INTERNET presentan aproximadamente un 50% de valores
+vacíos. Se ha determinado que deben eliminarse en su totalidad ya que
+cualquier intento de imputación implicaría inventar la mitad de la
+información lo que restaría validez.
+
+```{r}
+variables_a_excluir <- c(
+  "AÑO", 
+  "CÓDIGO_MUNICIPIO", 
+  "CÓDIGO_DEPARTAMENTO", 
+  "ETC", 
+  "CÓDIGO_ETC", 
+  "TAMAÑO_PROMEDIO_DE_GRUPO", 
+  "SEDES_CONECTADAS_A_INTERNET"
+)
+
+datos_excluidos <- datos %>%
+  select(-any_of(variables_a_excluir))
 ```
