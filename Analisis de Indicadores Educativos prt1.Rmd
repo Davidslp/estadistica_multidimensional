@@ -43,7 +43,7 @@ library(corrplot)
 library(knitr)
 library(DT)
 # Definición de rutas (Adaptado de tu código original)
-datos <- read.csv("educacion_limpio.csv")
+datos <- read.csv("EDUCACION.csv")
 
 ```
 
@@ -52,7 +52,7 @@ datos <- read.csv("educacion_limpio.csv")
 El presente documento tiene como objetivo analizar un conjunto de datos
 que contiene los indicadores educativos a nivel municipal en Colombia
 correspondientes al año 2024. Este dataset esta compuesto por 15.707
-filas y 36 variables, fue obtenido a través de Kaggle y recopila
+filas y 41variables, fue obtenido a través de Kaggle y recopila
 información oficial suministrada por el Ministerio de Educación
 Nacional.
 
@@ -80,16 +80,22 @@ fundamental para generar hipótesis sobre qué factores educativos crecen
 o disminuyen en conjunto.
 
 # Descripción del conjunto de datos
+```{r dimensiones}
+dim(datos) 
+```
 
-El dataset esta compuesto originalmente por 15.707 registros y 36
-variables. Su propósito es reunir información relacionada con distintos
-indicadores educativos de los municipios de Colombia durante el año
-2024, proporcionando una perspectiva territorial sobre las condiciones y
-características del sector educativo. Cada registro permite asociar
-diferentes variables e indicadores con un municipio determinado. A
-continuación, se describen las variables del conjunto de datos
-estructuradas por categoría metodológica.
+El dataset esta compuesto originalmente por 15.707 registros y
+41 variables. Su propósito es reunir información relacionada con
+distintos indicadores educativos de los municipios de Colombia durante
+el año 2024, proporcionando una perspectiva territorial sobre las
+condiciones y características del sector educativo. Cada registro
+permite asociar diferentes variables e indicadores con un municipio
+determinado. A continuación, se describen las variables del conjunto de
+datos estructuradas por categoría metodológica.
 
+```{r estructura}
+str(datos)
+```
 #### 1. Variables de Identificación Geográfica
 
 | Variable | Tipo Original | Descripción |
@@ -156,7 +162,5 @@ estructuradas por categoría metodológica.
 | `SEDES_CONECTADAS_A_INTERNET` | Float | **Categórica** | Proporción de sedes educativas con conexión a internet |
 
 ```{r dimensiones}
-dim(datos) 
-str(datos)
-summary(datos)
+summary(datos) 
 ```

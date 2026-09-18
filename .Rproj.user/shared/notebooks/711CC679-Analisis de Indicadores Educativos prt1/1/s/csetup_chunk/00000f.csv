@@ -20,5 +20,5 @@
 "0","library(knitr)"
 "0","library(DT)"
 "0","# Definición de rutas (Adaptado de tu código original)"
-"0","datos <- read.csv(""educacion_limpio.csv"")"
+"0","datos <- read.csv(""EDUCACION.csv"")"
 "0",""
