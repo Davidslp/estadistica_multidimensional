@@ -317,7 +317,15 @@ ggplot(datos_mun, aes(x = fct_reorder(MUNICIPIO, n), y = n)) +
     axis.text.y = element_text(size = 8),
     plot.title = element_text(face = "bold", size = 14)
   )
+
 ```
+
+El gráfico de barras muestra la frecuencia de aparición de los 25
+municipios con mayor cantidad de registros en el dataset, permitiendo
+identificar cuáles concentran la mayor cantidad de observaciones. La
+presencia de datos sesgados indica que un pequeño grupo de municipios
+concentra la mayoría de los registros, lo que puede requerir ponderación
+para evitar desbalance en análisis comparativos.
 
 #### 2. DEPARTAMENTO: Categórica
 
@@ -338,6 +346,13 @@ ggplot(educacion_limpio, aes(x = fct_infreq(DEPARTAMENTO))) +
     panel.grid.minor = element_blank()
   )
 ```
+
+El gráfico de barras ilustra la cantidad de registros o municipios
+agrupados por cada departamento en orden de frecuencia. Un sesgo
+pronunciado en esta variable refleja disparidades territoriales en la
+recolección o en la concentración administrativa, lo que significa que
+ciertos departamentos dominan el volumen de datos frente a otros
+periféricos.
 
 #### 3. POBLACIÓN_5_16: Numérica
 
@@ -373,6 +388,13 @@ educacion_limpio %>%
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
 ```
 
+El histograma y el diagrama de caja (filtrados a menos de 50,000
+habitantes) muestran una distribución fuertemente sesgada a la derecha,
+evidenciando que la gran mayoría de los municipios tienen poblaciones
+pequeñas o moderadas en este rango de edad. Los valores atípicos
+excluidos corresponden a grandes ciudades metropolitanas, cuya alta
+densidad demográfica sesgaría la visualización central si se incluyeran.
+
 #### 4. TASA_MATRICULACIÓN_5_16: Numérica
 
 ##### histograma
@@ -407,6 +429,14 @@ educacion_limpio %>%
   theme(axis.text.x = element_blank(), 
         axis.ticks.x = element_blank())
 ```
+
+Las gráficas muestran la concentración de la tasa de matriculación entre
+0 y 1.25, revelando que la mayoría de los municipios se sitúan en
+niveles altos de cobertura escolar. La existencia de valores atípicos
+superiores a 1.25 (a menudo producto de errores de registro o
+matriculación intermunicipal) sesga la media hacia arriba, haciendo que
+la mediana y el rango intercuartílico sean más confiables para evaluar
+la tendencia central.
 
 #### 5. COBERTURA_NETA: Numérica
 
@@ -445,6 +475,13 @@ educacion_limpio %>%
         axis.ticks.x = element_blank())
 ```
 
+El histograma y el boxplot reflejan cómo se distribuye la proporción de
+población en edad escolar matriculada adecuadamente en su respectivo
+grado. Los datos sesgados o atípicos superiores al límite establecido
+muestran inconsistencias estadísticas o casos excepcionales de atracción
+estudiantil, afectando la simetría de la distribución y requiriendo un
+análisis robusto sin estos extremos.
+
 #### 6. COBERTURA_NETA_TRANSICIÓN: Numérica
 
 ##### histograma
@@ -479,6 +516,12 @@ educacion_limpio %>%
   theme(axis.text.x = element_blank(), 
         axis.ticks.x = element_blank())
 ```
+
+Permiten observar el comportamiento de la escolarización neta en la
+primera infancia (transición), mostrando una concentración típica en
+valores moderados. Los sesgos y valores atípicos detectados suelen
+reflejar coberturas reportadas por encima del 100% debido a metodologías
+de estimación poblacional imperfectas o ingreso adelantado de menores.
 
 #### 7. COBERTURA_NETA_PRIMARIA: Numérica
 
@@ -515,6 +558,12 @@ educacion_limpio %>%
         axis.ticks.x = element_blank())
 ```
 
+Visualizan la proporción de niños en edad de primaria que cursan este
+nivel correctamente. La presencia de asimetrías o datos atípicos sugiere
+que algunos entes territoriales enfrentan retos severos de cobertura o
+presentan distorsiones en el censo base, alterando la normalidad de la
+distribución estadística.
+
 #### 8. COBERTURA_NETA_SECUNDARIA: Numérica
 
 ##### histograma
@@ -549,6 +598,12 @@ educacion_limpio %>%
   theme(axis.text.x = element_blank(), 
         axis.ticks.x = element_blank())
 ```
+
+Ilustran la concentración de la cobertura neta en secundaria, donde
+usualmente se observa una caída respecto a primaria. Los valores
+atípicos y sesgos señalan municipios con caídas drásticas por deserción
+temprana o, por el contrario, sobreestimaciones en zonas urbanas
+específicas.
 
 #### 9. COBERTURA_NETA_MEDIA: Numérica
 
@@ -585,6 +640,12 @@ educacion_limpio %>%
         axis.ticks.x = element_blank())
 ```
 
+Muestran la distribución de la cobertura neta en los grados superiores
+de educación media, la cual suele presentar valores más bajos y
+dispersos. La acumulación de datos hacia el extremo inferior y la
+presencia de sesgos indican una transición deficiente hacia la educación
+media en gran parte de los municipios analizados.
+
 #### 10. COBERTURA_BRUTA: Numérica
 
 ##### histograma
@@ -620,6 +681,12 @@ educacion_limpio %>%
         axis.ticks.x = element_blank())
 ```
 
+Reflejan la relación global de matriculados (incluyendo edades por fuera
+del rango ideal) frente a la población teórica. Al permitir valores de
+hasta 1.50, los gráficos capturan el fenómeno de la extraedad; los datos
+sesgados hacia la derecha muestran que muchos municipios albergan
+estudiantes rezagados en su ciclo escolar.
+
 #### 11. COBERTURA_BRUTA_TRANSICIÓN: Numérica
 
 ##### histograma
@@ -644,236 +711,704 @@ educacion_limpio %>%
   theme_minimal() + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
 ```
 
+Muestran la cobertura global en el nivel de transición, contemplando
+niños de diversas edades. La presencia de valores atípicos elevados y
+sesgos resalta distritos donde la demanda supera la población oficial
+estimada, evidenciando retos de planificación o flujos migratorios
+infantiles.
+
 #### 12. COBERTURA_BRUTA_PRIMARIA: Numérica
 
 ##### histograma
 
 ```{r}
-
+educacion_limpio %>%
+  filter(COBERTURA_BRUTA_PRIMARIA >= 0 & COBERTURA_BRUTA_PRIMARIA <= 1.50) %>%
+  ggplot(aes(x = COBERTURA_BRUTA_PRIMARIA)) +
+  geom_histogram(bins = 40, fill = "coral", color = "white") +
+  labs(title = "Histograma: Cobertura Bruta en Primaria", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
 ```
 
 ##### boxplot
 
 ```{r}
-
+educacion_limpio %>%
+  filter(COBERTURA_BRUTA_PRIMARIA >= 0 & COBERTURA_BRUTA_PRIMARIA <= 1.50) %>%
+  ggplot(aes(y = COBERTURA_BRUTA_PRIMARIA)) +
+  geom_boxplot(fill = "lightgreen", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Cobertura Bruta en Primaria", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
 ```
+
+Describen la distribución de la cobertura bruta en primaria,
+evidenciando el impacto de la extraedad y la repitencia acumulada. Los
+sesgos gráficos señalan que una proporción importante de municipios
+supera el 100% debido a alumnos mayores al rango tradicional cursando
+estos grados.
 
 #### 13. COBERTURA_BRUTA_SECUNDARIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_BRUTA_SECUNDARIA >= 0 & COBERTURA_BRUTA_SECUNDARIA <= 1.50) %>%
+  ggplot(aes(x = COBERTURA_BRUTA_SECUNDARIA)) +
+  geom_histogram(bins = 40, fill = "slateblue", color = "white") +
+  labs(title = "Histograma: Cobertura Bruta en Secundaria", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_BRUTA_SECUNDARIA >= 0 & COBERTURA_BRUTA_SECUNDARIA <= 1.50) %>%
+  ggplot(aes(y = COBERTURA_BRUTA_SECUNDARIA)) +
+  geom_boxplot(fill = "khaki", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Cobertura Bruta en Secundaria", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Las graficas de boxplot y el histograma permiten visualizar el
+comportamiento de la matrícula total en secundaria en relación con la
+cohorte de edad. Los datos atípicos y el sesgo de la distribución
+identifican disparidades en la retención y el rezago escolar acumulado
+en la adolescencia temprana.
 
 #### 14. COBERTURA_BRUTA_MEDIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_BRUTA_MEDIA >= 0 & COBERTURA_BRUTA_MEDIA <= 1.50) %>%
+  ggplot(aes(x = COBERTURA_BRUTA_MEDIA)) +
+  geom_histogram(bins = 40, fill = "firebrick", color = "white") +
+  labs(title = "Histograma: Cobertura Bruta en Media", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_BRUTA_MEDIA >= 0 & COBERTURA_BRUTA_MEDIA <= 1.50) %>%
+  ggplot(aes(y = COBERTURA_BRUTA_MEDIA)) +
+  geom_boxplot(fill = "pink", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Cobertura Bruta en Media", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Los diagramas exponen la distribución de la cobertura bruta en educación
+media, mostrando valores frecuentemente reducidos. La asimetría y la
+presencia de valores atípicos altos revelan que el acceso a este ciclo
+terminal es altamente heterogéneo y limitado en la mayoría de regiones.
 
 #### 15. DESERCIÓN: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(DESERCIÓN >= 0 & DESERCIÓN <= 0.20) %>%
+  ggplot(aes(x = DESERCIÓN)) +
+  geom_histogram(bins = 40, fill = "gray40", color = "white") +
+  labs(title = "Histograma: Deserción Total", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(DESERCIÓN >= 0 & DESERCIÓN <= 0.20) %>%
+  ggplot(aes(y = DESERCIÓN)) +
+  geom_boxplot(fill = "darkred", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Deserción Total", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Las gráficas anteriores muestran la concentración de la tasa de abandono
+escolar total en rangos bajos (menores al 20%). Los datos sesgados hacia
+la derecha y los valores atípicos identifican a los municipios críticos
+con problemas graves de exclusión educativa, los cuales alejan la
+distribución de una forma normal simétrica.
 
 #### 16. DESERCIÓN_TRANSICIÓN: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(DESERCIÓN_TRANSICIÓN >= 0 & DESERCIÓN_TRANSICIÓN <= 0.20) %>%
+  ggplot(aes(x = DESERCIÓN_TRANSICIÓN)) +
+  geom_histogram(bins = 40, fill = "gray50", color = "white") +
+  labs(title = "Histograma: Deserción en Transición", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(DESERCIÓN_TRANSICIÓN >= 0 & DESERCIÓN_TRANSICIÓN <= 0.20) %>%
+  ggplot(aes(y = DESERCIÓN_TRANSICIÓN)) +
+  geom_boxplot(fill = "indianred", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Deserción en Transición", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+los diagramas ilustran el comportamiento de la deserción en la etapa de
+transición. Aunque la mayoría de los valores se concentran cerca de
+cero, los sesgos y valores atípicos señalan focos específicos donde el
+abandono temprano es inusual y requiere intervención prioritaria.
 
 #### 17. DESERCIÓN_PRIMARIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(DESERCIÓN_PRIMARIA >= 0 & DESERCIÓN_PRIMARIA <= 0.20) %>%
+  ggplot(aes(x = DESERCIÓN_PRIMARIA)) +
+  geom_histogram(bins = 40, fill = "gray60", color = "white") +
+  labs(title = "Histograma: Deserción en Primaria", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(DESERCIÓN_PRIMARIA >= 0 & DESERCIÓN_PRIMARIA <= 0.20) %>%
+  ggplot(aes(y = DESERCIÓN_PRIMARIA)) +
+  geom_boxplot(fill = "salmon", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Deserción en Primaria", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Por lo anterior podemos visualizan la tasa de abandono escolar durante
+la primaria. La asimetría positiva en el histograma indica que, si bien
+la mayoría de municipios mantienen tasas bajas, existen casos atípicos
+con deserciones elevadas que actúan como puntos de influencia anómalos.
 
 #### 18. DESERCIÓN_SECUNDARIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(DESERCIÓN_SECUNDARIA >= 0 & DESERCIÓN_SECUNDARIA <= 0.25) %>%
+  ggplot(aes(x = DESERCIÓN_SECUNDARIA)) +
+  geom_histogram(bins = 40, fill = "gray70", color = "white") +
+  labs(title = "Histograma: Deserción en Secundaria", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(DESERCIÓN_SECUNDARIA >= 0 & DESERCIÓN_SECUNDARIA <= 0.25) %>%
+  ggplot(aes(y = DESERCIÓN_SECUNDARIA)) +
+  geom_boxplot(fill = "lightcoral", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Deserción en Secundaria", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Las anteriores reflejan la deserción en secundaria (con un filtro
+ajustado hasta 0.25). Se observa un sesgo marcado hacia los valores
+bajos, pero con una cola más alargada y valores atípicos que evidencian
+el incremento crítico del abandono escolar en la adolescencia.
 
 #### 19. DESERCIÓN_MEDIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(DESERCIÓN_MEDIA >= 0 & DESERCIÓN_MEDIA <= 0.25) %>%
+  ggplot(aes(x = DESERCIÓN_MEDIA)) +
+  geom_histogram(bins = 40, fill = "gray80", color = "black") +
+  labs(title = "Histograma: Deserción en Media", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(DESERCIÓN_MEDIA >= 0 & DESERCIÓN_MEDIA <= 0.25) %>%
+  ggplot(aes(y = DESERCIÓN_MEDIA)) +
+  geom_boxplot(fill = "tomato", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Deserción en Media", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Muestran la distribución del abandono escolar en la educación media. Los
+datos sesgados y la presencia de valores atípicos remarcan que el riesgo
+de deserción escolar se intensifica en los grados finales, afectando de
+forma desigual a los municipios del país.
 
 #### 20. APROBACIÓN: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(APROBACIÓN >= 0.50 & APROBACIÓN <= 1.0) %>%
+  ggplot(aes(x = APROBACIÓN)) +
+  geom_histogram(bins = 40, fill = "forestgreen", color = "white") +
+  labs(title = "Histograma: Aprobación Total", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(APROBACIÓN >= 0.50 & APROBACIÓN <= 1.0) %>%
+  ggplot(aes(y = APROBACIÓN)) +
+  geom_boxplot(fill = "palegreen", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Aprobación Total", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Las gráficas muestran la concentración de la aprobación total en la
+parte alta de la distribución (por encima del 50%). El sesgo negativo
+(hacia la izquierda) indica que la gran mayoría de estudiantes aprueban
+el año, mientras que los valores atípicos inferiores representan
+municipios con crisis severas de rendimiento académico.
 
 #### 21. APROBACIÓN_TRANSICIÓN: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(APROBACIÓN_TRANSICIÓN >= 0.50 & APROBACIÓN_TRANSICIÓN <= 1.0) %>%
+  ggplot(aes(x = APROBACIÓN_TRANSICIÓN)) +
+  geom_histogram(bins = 40, fill = "olivedrab", color = "white") +
+  labs(title = "Histograma: Aprobación en Transición", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(APROBACIÓN_TRANSICIÓN >= 0.50 & APROBACIÓN_TRANSICIÓN <= 1.0) %>%
+  ggplot(aes(y = APROBACIÓN_TRANSICIÓN)) +
+  geom_boxplot(fill = "darkseagreen", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Aprobación en Transición", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Se observa en lo anterior el rendimiento en el nivel de transición,
+donde las tasas de aprobación suelen ser extremadamente altas. Los
+sesgos hacia el 100% y los pocos valores atípicos inferiores reflejan
+que casi la totalidad de los niños superan esta etapa inicial sin
+reprobar.
 
 #### 22. APROBACIÓN_PRIMARIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(APROBACIÓN_PRIMARIA >= 0.50 & APROBACIÓN_PRIMARIA <= 1.0) %>%
+  ggplot(aes(x = APROBACIÓN_PRIMARIA)) +
+  geom_histogram(bins = 40, fill = "seagreen", color = "white") +
+  labs(title = "Histograma: Aprobación en Primaria", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(APROBACIÓN_PRIMARIA >= 0.50 & APROBACIÓN_PRIMARIA <= 1.0) %>%
+  ggplot(aes(y = APROBACIÓN_PRIMARIA)) +
+  geom_boxplot(fill = "mediumseagreen", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Aprobación en Primaria", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+El histograma y el boxplot muestran la distribución de la aprobación en
+la escuela primaria. El fuerte sesgo hacia tasas elevadas refleja un
+comportamiento generalizado de éxito académico, quedando los valores
+atípicos bajos como excepciones asociadas a contextos de vulnerabilidad
+extrema.
 
 #### 23. APROBACIÓN_SECUNDARIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(APROBACIÓN_SECUNDARIA >= 0.50 & APROBACIÓN_SECUNDARIA <= 1.0) %>%
+  ggplot(aes(x = APROBACIÓN_SECUNDARIA)) +
+  geom_histogram(bins = 40, fill = "mediumaquamarine", color = "white") +
+  labs(title = "Histograma: Aprobación en Secundaria", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(APROBACIÓN_SECUNDARIA >= 0.50 & APROBACIÓN_SECUNDARIA <= 1.0) %>%
+  ggplot(aes(y = APROBACIÓN_SECUNDARIA)) +
+  geom_boxplot(fill = "aquamarine", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Aprobación en Secundaria", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Se puede observar el comportamiento de la aprobación en secundaria,
+donde la distribución empieza a perder tanta concentración superior
+debido a la mayor dificultad académica. Los datos atípicos inferiores
+señalan municipios con tasas de éxito inusualmente bajas.
 
 #### 24. APROBACIÓN_MEDIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(APROBACIÓN_MEDIA >= 0.50 & APROBACIÓN_MEDIA <= 1.0) %>%
+  ggplot(aes(x = APROBACIÓN_MEDIA)) +
+  geom_histogram(bins = 40, fill = "lightseagreen", color = "white") +
+  labs(title = "Histograma: Aprobación en Media", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(APROBACIÓN_MEDIA >= 0.50 & APROBACIÓN_MEDIA <= 1.0) %>%
+  ggplot(aes(y = APROBACIÓN_MEDIA)) +
+  geom_boxplot(fill = "turquoise", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Aprobación en Media", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Las anteriores graficas describen la tasa de aprobación en el ciclo de
+educación media. La asimetría negativa y la dispersión en el diagrama de
+caja muestran que el éxito escolar en este nivel es más variable y
+sujeto a las condiciones socioeconómicas locales.
 
 #### 25. REPROBACIÓN: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPROBACIÓN >= 0 & REPROBACIÓN <= 0.25) %>%
+  ggplot(aes(x = REPROBACIÓN)) +
+  geom_histogram(bins = 40, fill = "orange", color = "white") +
+  labs(title = "Histograma: Reprobación Total", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPROBACIÓN >= 0 & REPROBACIÓN <= 0.25) %>%
+  ggplot(aes(y = REPROBACIÓN)) +
+  geom_boxplot(fill = "gold", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Reprobación Total", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Muestran la concentración de la tasa de reprobación total en valores
+reducidos (menores al 25%). El sesgo positivo y la presencia de valores
+atípicos altos revelan que el fracaso escolar es un fenómeno concentrado
+en municipios específicos con rezagos estructurales.
 
 #### 26. REPROBACIÓN_TRANSICIÓN: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPROBACIÓN_TRANSICIÓN >= 0 & REPROBACIÓN_TRANSICIÓN <= 0.25) %>%
+  ggplot(aes(x = REPROBACIÓN_TRANSICIÓN)) +
+  geom_histogram(bins = 40, fill = "darkorange", color = "white") +
+  labs(title = "Histograma: Reprobación en Transición", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPROBACIÓN_TRANSICIÓN >= 0 & REPROBACIÓN_TRANSICIÓN <= 0.25) %>%
+  ggplot(aes(y = REPROBACIÓN_TRANSICIÓN)) +
+  geom_boxplot(fill = "navajowhite", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Reprobación en Transición", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Ilustran la reprobación en el grado de transición, la cual es
+naturalmente marginal. Los datos atípicos y el sesgo acentuado muestran
+que reprobar en este nivel es un evento excepcional que ocurre casi
+exclusivamente en contextos muy específicos.
 
 #### 27. REPROBACIÓN_PRIMARIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPROBACIÓN_PRIMARIA >= 0 & REPROBACIÓN_PRIMARIA <= 0.25) %>%
+  ggplot(aes(x = REPROBACIÓN_PRIMARIA)) +
+  geom_histogram(bins = 40, fill = "chocolate", color = "white") +
+  labs(title = "Histograma: Reprobación en Primaria", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPROBACIÓN_PRIMARIA >= 0 & REPROBACIÓN_PRIMARIA <= 0.25) %>%
+  ggplot(aes(y = REPROBACIÓN_PRIMARIA)) +
+  geom_boxplot(fill = "bisque", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Reprobación en Primaria", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Reflejan la distribución de la reprobación en primaria. La alta
+concentración cerca del cero y los valores atípicos hacia la derecha
+indican que el reproceso escolar afecta a una minoría de municipios con
+problemas particulares de calidad o continuidad.
 
 #### 28. REPROBACIÓN_SECUNDARIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPROBACIÓN_SECUNDARIA >= 0 & REPROBACIÓN_SECUNDARIA <= 0.30) %>%
+  ggplot(aes(x = REPROBACIÓN_SECUNDARIA)) +
+  geom_histogram(bins = 40, fill = "sienna", color = "white") +
+  labs(title = "Histograma: Reprobación en Secundaria", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPROBACIÓN_SECUNDARIA >= 0 & REPROBACIÓN_SECUNDARIA <= 0.30) %>%
+  ggplot(aes(y = REPROBACIÓN_SECUNDARIA)) +
+  geom_boxplot(fill = "peachpuff", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Reprobación en Secundaria", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Muestran el comportamiento de la reprobación en secundaria (filtrada
+hasta 0.30). Los gráficos evidencian una mayor dispersión y un sesgo
+menos abrupto que en primaria, lo que significa que la reprobación se
+incrementa y se extiende a lo largo de más municipios adolescentes.
 
 #### 29. REPROBACIÓN_MEDIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPROBACIÓN_MEDIA >= 0 & REPROBACIÓN_MEDIA <= 0.25) %>%
+  ggplot(aes(x = REPROBACIÓN_MEDIA)) +
+  geom_histogram(bins = 40, fill = "peru", color = "white") +
+  labs(title = "Histograma: Reprobación en Media", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPROBACIÓN_MEDIA >= 0 & REPROBACIÓN_MEDIA <= 0.25) %>%
+  ggplot(aes(y = REPROBACIÓN_MEDIA)) +
+  geom_boxplot(fill = "wheat", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Reprobación en Media", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Podemos ver en las anteriores graficas la tasa de reprobación en
+educación media. La presencia de sesgos y valores atípicos superiores
+destaca que los estudiantes de los grados finales enfrentan mayores
+riesgos de no superar las asignaturas, variando intensamente entre
+regiones.
 
 #### 30. REPITENCIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPITENCIA >= 0 & REPITENCIA <= 0.20) %>%
+  ggplot(aes(x = REPITENCIA)) +
+  geom_histogram(bins = 40, fill = "mediumpurple", color = "white") +
+  labs(title = "Histograma: Repitencia Total", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPITENCIA >= 0 & REPITENCIA <= 0.20) %>%
+  ggplot(aes(y = REPITENCIA)) +
+  geom_boxplot(fill = "thistle", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Repitencia Total", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Se observa la distribución de la repitencia total en el sistema
+educativo. El marcado sesgo hacia la izquierda (valores cercanos a cero)
+y los valores atípicos superiores indican que repetir año es un problema
+localizado en un grupo minoritario de municipios.
 
 #### 31. REPITENCIA_TRANSICIÓN: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPITENCIA_TRANSICIÓN >= 0 & REPITENCIA_TRANSICIÓN <= 0.15) %>%
+  ggplot(aes(x = REPITENCIA_TRANSICIÓN)) +
+  geom_histogram(bins = 40, fill = "purple", color = "white") +
+  labs(title = "Histograma: Repitencia en Transición", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPITENCIA_TRANSICIÓN >= 0 & REPITENCIA_TRANSICIÓN <= 0.15) %>%
+  ggplot(aes(y = REPITENCIA_TRANSICIÓN)) +
+  geom_boxplot(fill = "plum", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Repitencia en Transición", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Podemos ver que al estar fuertemente sesgada hacia el cero, la gráfica
+demuestra que la repetición en este nivel es estadísticamente casi nula,
+apareciendo solo como valores atípicos aislados en registros atípicos.
 
 #### 32. REPITENCIA_PRIMARIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPITENCIA_PRIMARIA >= 0 & REPITENCIA_PRIMARIA <= 0.20) %>%
+  ggplot(aes(x = REPITENCIA_PRIMARIA)) +
+  geom_histogram(bins = 40, fill = "darkviolet", color = "white") +
+  labs(title = "Histograma: Repitencia en Primaria", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPITENCIA_PRIMARIA >= 0 & REPITENCIA_PRIMARIA <= 0.20) %>%
+  ggplot(aes(y = REPITENCIA_PRIMARIA)) +
+  geom_boxplot(fill = "orchid", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Repitencia en Primaria", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+El comportamiento de la repitencia en primaria. La asimetría positiva y
+los puntos atípicos superiores señalan que, aunque la mayoría de
+escuelas controlan este indicador, persisten municipios con tasas de
+repetición alarmantes.
 
 #### 33. REPITENCIA_SECUNDARIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPITENCIA_SECUNDARIA >= 0 & REPITENCIA_SECUNDARIA <= 0.25) %>%
+  ggplot(aes(x = REPITENCIA_SECUNDARIA)) +
+  geom_histogram(bins = 40, fill = "blueviolet", color = "white") +
+  labs(title = "Histograma: Repitencia en Secundaria", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPITENCIA_SECUNDARIA >= 0 & REPITENCIA_SECUNDARIA <= 0.25) %>%
+  ggplot(aes(y = REPITENCIA_SECUNDARIA)) +
+  geom_boxplot(fill = "mediumorchid", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Repitencia en Secundaria", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+la distribución de la repitencia en secundaria. La mayor dispersión en
+el diagrama de caja y el sesgo positivo indican que el fenómeno de
+repetir curso se vuelve más frecuente y heterogéneo durante la
+adolescencia.
 
 #### 34. REPITENCIA_MEDIA: Numérica
 
 ##### histograma
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPITENCIA_MEDIA >= 0 & REPITENCIA_MEDIA <= 0.20) %>%
+  ggplot(aes(x = REPITENCIA_MEDIA)) +
+  geom_histogram(bins = 40, fill = "blue", color = "white") +
+  labs(title = "Histograma: Repitencia en Media", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
 
 ##### boxplot
 
-\`\`\`{r}
+```{r}
+educacion_limpio %>%
+  filter(REPITENCIA_MEDIA >= 0 & REPITENCIA_MEDIA <= 0.20) %>%
+  ggplot(aes(y = REPITENCIA_MEDIA)) +
+  geom_boxplot(fill = "violet", color = "black", alpha = 0.7) +
+  labs(title = "Boxplot: Repitencia en Media", y = "Tasa") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+Describen la repitencia en la educación media. Los datos sesgados y los
+valores atípicos reflejan que, aunque muchos municipios mantienen tasas
+bajas, existen regiones donde la pérdida de años en la educación media
+representa un reto de eficiencia institucional significativo.
