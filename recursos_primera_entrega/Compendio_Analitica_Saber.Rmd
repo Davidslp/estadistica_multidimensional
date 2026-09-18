@@ -1,0 +1,744 @@
+---
+title: "Notas de Clase: Compendio de Analítica de Datos"
+subtitle: "Todo lo visto en el primer corte, sobre un mismo problema: las pruebas Saber"
+author: "Estadística Multidimensional · Universidad Distrital Francisco José de Caldas"
+date: "Lunes 28 de septiembre de 2026"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: cosmo
+    code_folding: show
+    df_print: paged
+    fig_width: 9
+    fig_height: 5.5
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 9, fig.height = 5.5)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(GGally)
+library(corrplot)
+theme_set(theme_minimal(base_size = 13))
+```
+
+# Introducción
+
+En el primer corte vimos, una por una, las herramientas básicas del
+análisis de datos: preparar la base, mirar cada variable, comparar
+grupos, medir cómo se mueven las variables juntas. **Las vimos rápido,
+cada una con un ejemplo distinto.**
+
+Hoy las usamos **todas juntas, sobre un solo problema**, que es como se
+usan en la vida real. Nadie hace «un histograma» por hacerlo: se hace
+porque hay una pregunta que responder.
+
+La pregunta de hoy es una que a ustedes les toca de cerca:
+
+> **¿De qué depende el resultado de un estudiante en la prueba Saber?**
+
+Y este mismo dataset nos va a acompañar **el resto del semestre**. Lo
+que hoy dejemos limpio y entendido es la base de todo lo que viene:
+casos raros, componentes principales, factores, comparación de grupos.
+
+# Objetivos de aprendizaje
+
+Al terminar la sesión, cada estudiante debe poder:
+
+1.  Explicar **para qué sirve** cada herramienta del primer corte, con
+    un ejemplo real.
+2.  Detectar **problemas de calidad** en una base real y decidir qué
+    hacer con cada uno.
+3.  Leer un gráfico **en términos del problema**, no solo describir su
+    forma.
+4.  Distinguir **una diferencia entre grupos** de **una separación entre
+    grupos**.
+5.  Explicar por qué **mirar las variables juntas** muestra cosas que no
+    se ven una por una.
+
+# La regla de hoy: describir no es analizar
+
+Todo lo que vamos a hacer se puede contar de dos maneras, y en cada
+sección van a ver las dos lado a lado.
+
+|   | Describir | Analizar |
+|----|----|----|
+| **Qué hace** | Dice **qué muestra** el número o el gráfico | Dice **qué significa** para el problema y **qué se decide** |
+| **Pregunta que responde** | ¿Cómo es? | ¿Y eso qué? ¿Qué hago con eso? |
+| **Ejemplo** | «El promedio del estrato 6 es 109 y el del estrato 1 es 95.» | «El estrato se asocia con el puntaje, pero no lo determina: no sirve para predecir el resultado de un estudiante.» |
+| **Quién puede escribirlo** | Cualquiera que mire el gráfico, sin conocer el problema | Solo quien entiende los datos y la pregunta |
+
+Describir es **necesario**: sin eso no hay de qué hablar. Pero **un
+informe que solo describe no le sirve a nadie**, porque el lector ya ve
+el gráfico.
+
+> **La prueba:** tape el gráfico y lea la frase. Si la frase solo repite
+> lo que el gráfico muestra, es descripción. Si dice algo que el gráfico
+> solo **no** dice —una consecuencia, una advertencia, una decisión—, es
+> análisis.
+
+En cada sección hay un recuadro así:
+
+> 📋 **Describir:** lo que se ve.
+>
+> 🔎 **Analizar:** lo que significa y lo que se decide.
+
+# El problema y los datos
+
+## Qué es este dataset
+
+Son los resultados de **10 000 estudiantes** de programas **técnicos y
+tecnológicos** de Colombia en la prueba Saber. Cada estudiante presentó
+cinco módulos:
+
+| Módulo | Qué mide |
+|----|----|
+| **Razonamiento cuantitativo** | Usar números, tablas y gráficos para resolver problemas |
+| **Lectura crítica** | Entender, interpretar y evaluar textos |
+| **Competencias ciudadanas** | Comprender la sociedad, la Constitución y los conflictos |
+| **Inglés** | Comprensión del idioma |
+| **Comunicación escrita** | Escribir un texto argumentado |
+
+Además trae información del estudiante y su familia: estrato, si tiene
+computador o internet, educación de la madre, género, índice
+socioeconómico (INSE) y más.
+
+> **Una advertencia antes de empezar:** el 63 % de los estudiantes son
+> del SENA. No es la prueba de los universitarios, así que lo que
+> encontremos vale para este grupo, no para todo el país.
+
+## Leer la base
+
+```{r leer}
+saber <- read.csv("PruebaSaber1.csv", sep = ";", fileEncoding = "latin1",
+                  stringsAsFactors = FALSE)
+dim(saber)
+```
+
+**Qué es una fila:** un estudiante. **Cuántas variables:** 78. No vamos
+a usar todas: la primera decisión de un análisis es escoger con qué se
+trabaja, y decir por qué.
+
+## Escoger las variables
+
+```{r seleccionar}
+s <- saber |>
+  transmute(
+    cuantitativo = MOD_RAZONA_CUANTITAT_PUNT,
+    lectura      = MOD_LECTURA_CRITICA_PUNT,
+    ciudadanas   = MOD_COMPETEN_CIUDADA_PUNT,
+    ingles       = MOD_INGLES_PUNT,
+    escritura    = MOD_COMUNI_ESCRITA_PUNT,
+    global       = PUNT_GLOBAL,
+    inse         = ESTU_INSE_INDIVIDUAL,
+    genero       = ESTU_GENERO,
+    estrato      = FAMI_ESTRATOVIVIENDA,
+    computador   = FAMI_TIENECOMPUTADOR,
+    internet     = FAMI_TIENEINTERNET,
+    nacimiento   = ESTU_FECHANACIMIENTO
+  )
+str(s)
+```
+
+| Tipo | Variables | Para qué las queremos |
+|----|----|----|
+| **Resultados** | los cinco módulos y el global | Es lo que queremos entender |
+| **Contexto numérico** | INSE | Resume la situación socioeconómica |
+| **Contexto categórico** | género, estrato, computador, internet | Para comparar grupos |
+| **Para revisar calidad** | fecha de nacimiento | Nos dice si hay registros imposibles |
+
+Dejamos por fuera, por ejemplo, el nombre de la institución y el
+municipio: tienen cientos de categorías y no ayudan a responder la
+pregunta de hoy.
+
+# Antes de analizar: ¿los datos están bien?
+
+Esta es la parte que más se salta y la que más cuesta después. **Un solo
+dato mal escrito puede cambiar una conclusión**, y hoy lo vamos a ver
+pasar.
+
+## Faltantes
+
+```{r faltantes}
+colSums(is.na(s) | s == "")
+```
+
+> 📋 **Describir:** hay 85 estudiantes sin internet registrado, 56 sin
+> computador y 66 sin puntaje de escritura.
+>
+> 🔎 **Analizar:** con 10 000 filas, eso es **menos del 1 %** en cada
+> variable, así que dejarlos por fuera no cambia ninguna conclusión.
+> **Decisión:** se omiten en cada cálculo, sin borrar a nadie de la
+> base.
+
+## Categorías que no deberían existir
+
+```{r categorias-raras}
+table(s$estrato)
+table(s$internet)
+```
+
+Dos cosas saltan a la vista:
+
+- En **estrato** aparece «Empleado obrero u operario». Eso no es un
+  estrato: es una ocupación.
+- En **internet** aparece «Madera pulida, baldosa…». Eso es un tipo de
+  piso.
+
+```{r fila-corrida}
+fila_rara <- which(s$estrato == "Empleado obrero u operario")
+fila_rara
+saber[fila_rara, c("FAMI_OCUPACIONMADRE", "FAMI_ESTRATOVIVIENDA",
+                   "FAMI_NIVEL_SISBEN", "FAMI_TIENEINTERNET")]
+```
+
+> 📋 **Describir:** en «estrato» aparece «Empleado obrero u operario» y
+> en «internet» aparece «Madera pulida, baldosa…».
+>
+> 🔎 **Analizar:** es **la misma fila, corrida una columna**: en
+> «estrato» quedó la ocupación, en «Sisbén» quedó el estrato, en
+> «internet» quedó el piso. No es un dato raro del estudiante: es un
+> **error al armar el archivo**, y todos sus valores están en el lugar
+> equivocado. **Decisión:** esa fila se elimina. Es una sola entre 10
+> 000.
+
+## Fechas imposibles
+
+```{r nacimiento}
+anio <- as.integer(substr(s$nacimiento, 7, 10))
+summary(anio)
+table(anio[anio < 1950 | anio > 2005])
+```
+
+> 📋 **Describir:** hay 15 estudiantes con año de nacimiento anterior a
+> 1950 o posterior a 2005, incluidos cinco de 1900 y dos de 2016.
+>
+> 🔎 **Analizar:** nadie nacido en 1900 o en 2016 pudo presentar la
+> prueba: son **errores de digitación en la fecha**, no estudiantes
+> raros. Pero el error está **solo en esa columna**, y la edad no la
+> usamos. **Decisión:** no se borran; sus puntajes están bien. **Un
+> error en una columna no obliga a borrar la fila completa.**
+
+## El INSE: un error que borra una relación
+
+```{r inse-crudo, fig.height = 3.5}
+summary(s$inse)
+ggplot(s, aes(x = inse)) +
+  geom_boxplot(fill = "grey85") +
+  labs(title = "INSE tal como viene", x = "INSE", y = NULL)
+```
+
+La mediana es 49,5 y el máximo es **63 056**. El gráfico es inservible:
+todo queda aplastado a la izquierda.
+
+```{r inse-gigantes}
+s[s$inse > 100 & !is.na(s$inse), c("inse", "global", "estrato")]
+```
+
+Son **ocho estudiantes**. Y si miramos cómo viene el INSE en el archivo
+original, se entiende qué pasó: los normales vienen escritos como
+`44.584435`; estos vienen como `45201`. **Se perdió el punto decimal.**
+Ese estudiante no tiene un INSE de 45 201: tiene **45,201**.
+
+> **No son atípicos: son errores.** Y la diferencia importa, porque un
+> atípico se estudia, y un error se corrige.
+
+Ahora veamos el daño que hacen esos ocho valores:
+
+```{r inse-dano}
+c(correlacion_con_errores = cor(s$inse, s$global, use = "complete.obs"),
+  correlacion_corregida   = cor(ifelse(s$inse > 100, s$inse / 1000, s$inse),
+                                s$global, use = "complete.obs"))
+```
+
+> 📋 **Describir:** el INSE tiene mediana 49,5 y máximo 63 056; ocho
+> estudiantes tienen valores de decenas de miles. La correlación con el
+> puntaje es 0,017 con esos valores y 0,253 corrigiéndolos.
+>
+> 🔎 **Analizar:** esos ocho no son atípicos, son **errores**: se perdió
+> el punto decimal, y se ve comparándolos con cómo vienen escritos los
+> demás. Y el daño es enorme: **con los errores, parecería que la
+> situación socioeconómica no tiene nada que ver con el resultado;
+> corrigiendo 8 filas de 10 000, aparece una relación clara**.
+> **Decisión:** se corrigen dividiendo por 1000, porque el valor real se
+> puede recuperar. Un análisis que no revisó sus datos habría publicado
+> una conclusión falsa.
+>
+> **Ésta es la lección más importante del día.**
+
+## La base limpia
+
+```{r limpiar}
+s <- s[-fila_rara, ]
+s$inse <- ifelse(s$inse > 100, s$inse / 1000, s$inse)
+
+s$estrato <- sub("Estrato ", "", s$estrato)
+s$estrato[grepl("rural", s$estrato)] <- "Rural"
+s$estrato <- factor(s$estrato, levels = c("1", "2", "3", "4", "5", "6", "Rural"))
+
+s$computador <- factor(ifelse(s$computador == "", NA, s$computador))
+s$internet   <- factor(ifelse(s$internet == "", NA, s$internet))
+s$genero     <- factor(s$genero, labels = c("Mujer", "Hombre"))
+
+dim(s)
+```
+
+| Problema | Filas | Decisión | Por qué |
+|----|---:|----|----|
+| Fila corrida una columna | 1 | Eliminar | Todos sus valores están en la columna equivocada |
+| INSE sin punto decimal | 8 | **Corregir** dividiendo por 1000 | El error es evidente y el valor se puede recuperar |
+| Años de nacimiento imposibles | 15 | Dejar | No usamos la edad; sus puntajes están bien |
+| Faltantes | \< 1 % | Omitir en cada cálculo | Son muy pocos para cambiar algo |
+
+**Para qué sirvió todo esto:** para que lo que concluyamos desde aquí
+sea sobre los estudiantes, no sobre los errores del archivo.
+
+# Una variable a la vez
+
+## Los cinco módulos
+
+```{r modulos-hist, fig.height = 5}
+modulos <- c("cuantitativo", "lectura", "ciudadanas", "ingles", "escritura")
+
+s |>
+  pivot_longer(all_of(modulos), names_to = "modulo", values_to = "puntaje") |>
+  ggplot(aes(x = puntaje)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white") +
+  facet_wrap(~ modulo, ncol = 3) +
+  labs(title = "Distribución de cada módulo", x = "Puntaje", y = "Estudiantes")
+```
+
+```{r modulos-resumen}
+resumen <- sapply(s[modulos], function(v) c(
+  media   = mean(v, na.rm = TRUE),
+  mediana = median(v, na.rm = TRUE),
+  desv    = sd(v, na.rm = TRUE),
+  minimo  = min(v, na.rm = TRUE),
+  maximo  = max(v, na.rm = TRUE),
+  ceros   = sum(v == 0, na.rm = TRUE)))
+round(t(resumen), 1)
+```
+
+> 📋 **Describir:** los cinco módulos tienen media cercana a 100 y
+> desviación cercana a 20; la media y la mediana casi coinciden; inglés
+> tiene 26 ceros; escritura tiene su mínimo en 31.
+>
+> 🔎 **Analizar:**
+>
+> - Media 100 y desviación 20 **no es casualidad**: el ICFES construye
+>   los puntajes así. **Por eso los cinco están en la misma escala y se
+>   pueden comparar directamente**: un 120 en inglés y un 120 en lectura
+>   significan lo mismo, una desviación por encima del promedio.
+>   **Decisión:** no hace falta estandarizar los módulos antes de
+>   compararlos.
+> - Media y mediana iguales dicen que **aquí el promedio sí representa
+>   al estudiante típico**, así que se puede usar sin miedo.
+> - Escritura se califica **leyendo un texto**, no con preguntas de
+>   selección, y por eso se comporta distinto. **Decisión:** cuando algo
+>   raro aparezca en escritura, antes de sospechar de los datos hay que
+>   recordar que es otra forma de medir.
+
+### Los ceros de inglés: ¿no saben o no presentaron?
+
+```{r ceros-ingles}
+ceros <- s[which(s$ingles == 0), ]
+nrow(ceros)
+c(lectura_media_de_los_ceros = mean(ceros$lectura),
+  global_medio_de_los_ceros  = mean(ceros$global),
+  global_medio_de_todos      = mean(s$global))
+```
+
+> 📋 **Describir:** los 26 estudiantes con cero en inglés tienen en
+> promedio 94 en lectura y 70 en el puntaje global.
+>
+> 🔎 **Analizar:** 94 en lectura es un resultado **normal**: no son
+> estudiantes que no saben nada. Lo más probable es que **no presentaron
+> el módulo de inglés**, y ese cero les **hunde el puntaje global** unos
+> 30 puntos por debajo del promedio. **Decisión:** en inglés, el cero se
+> trata como **faltante**; y el puntaje global de esos 26 no se usa para
+> compararlos con nadie, porque no mide lo mismo que el de los demás.
+
+```{r ceros-a-na}
+s$ingles[s$ingles == 0] <- NA
+```
+
+## La situación socioeconómica
+
+```{r inse-limpio, fig.height = 4}
+ggplot(s, aes(x = inse)) +
+  geom_histogram(bins = 40, fill = "darkorange", color = "white") +
+  labs(title = "INSE, ya corregido", x = "Índice socioeconómico", y = "Estudiantes")
+```
+
+```{r inse-estrato}
+quantile(s$inse, c(0.10, 0.50, 0.90), na.rm = TRUE)
+cor(s$inse, as.numeric(as.character(s$estrato)), use = "complete.obs")
+```
+
+> 📋 **Describir:** la mayoría de estudiantes tiene un INSE entre 36 y
+> 61, con una cola hacia abajo.
+>
+> 🔎 **Analizar:** la cola hacia abajo son estudiantes en **situación
+> socioeconómica más difícil que el resto**, y son justo los que más
+> interesa entender. Y el INSE se correlaciona con el estrato (0,49),
+> pero **no son la misma cosa**: una correlación de 0,49 dice que van
+> juntos, y a la vez que queda mucho que el uno no explica del otro.
+> **Decisión:** usar las dos, porque cada una captura algo que la otra
+> no — el estrato habla de la vivienda; el INSE, de la familia completa.
+
+# Comparar grupos
+
+Aquí empieza lo interesante. Hasta ahora miramos **cómo es el puntaje**.
+Ahora preguntamos **cómo cambia el puntaje según quién es el
+estudiante**.
+
+> **Esto es exactamente la distribución condicional que vimos en el
+> corte:** el puntaje **dado** el estrato. No es una fórmula: es partir
+> la base en grupos y comparar.
+
+## Por estrato
+
+```{r estrato-box}
+s |>
+  filter(!is.na(estrato)) |>
+  ggplot(aes(x = estrato, y = global)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Puntaje global según el estrato", x = "Estrato", y = "Puntaje global")
+```
+
+```{r estrato-tabla}
+s |>
+  filter(!is.na(estrato)) |>
+  group_by(estrato) |>
+  summarise(estudiantes = n(), promedio = round(mean(global), 1),
+            desviacion = round(sd(global), 1))
+```
+
+> 📋 **Describir:** el promedio del puntaje global sube con el estrato,
+> de 95 en estrato 1 a 109 en estrato 6, y las cajas del boxplot se
+> montan unas sobre otras.
+>
+> 🔎 **Analizar:** la diferencia es **real y va siempre en la misma
+> dirección**, así que el estrato sí tiene que ver con el resultado.
+> Pero que las cajas se monten significa que **el estrato no separa a
+> los estudiantes**. Veámoslo con un número:
+
+```{r solapamiento}
+mediana_altos <- median(s$global[s$estrato %in% c("4", "5", "6")])
+estrato_1     <- s$global[which(s$estrato == "1")]   # which() deja por fuera a quien no tiene estrato
+mean(estrato_1 > mediana_altos)
+```
+
+> 📋 **Describir:** el 20 % de los estudiantes de estrato 1 supera la
+> mediana de los estratos 4, 5 y 6.
+>
+> 🔎 **Analizar:** **uno de cada cinco** estudiantes de estrato 1 le
+> gana a la mitad de los estratos altos. Ésta es una distinción que
+> vamos a usar todo el semestre: **que los grupos tengan promedios
+> distintos no significa que se puedan separar.** Conocer el estrato de
+> un estudiante no permite adivinar su puntaje.
+
+## Por computador y por género
+
+```{r computador-genero, fig.height = 4.5}
+g1 <- s |> filter(!is.na(computador)) |>
+  ggplot(aes(x = computador, y = global)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(title = "¿Tiene computador?", x = NULL, y = "Puntaje global")
+
+g2 <- s |>
+  pivot_longer(c(cuantitativo, lectura), names_to = "modulo", values_to = "puntaje") |>
+  ggplot(aes(x = genero, y = puntaje, fill = genero)) +
+  geom_boxplot(show.legend = FALSE) +
+  facet_wrap(~ modulo) +
+  labs(title = "Género: cuantitativo y lectura", x = NULL, y = "Puntaje")
+
+patchwork::wrap_plots(g1, g2, widths = c(1, 2))
+```
+
+```{r genero-tabla}
+s |> group_by(genero) |>
+  summarise(cuantitativo = round(mean(cuantitativo), 1),
+            lectura = round(mean(lectura), 1),
+            global = round(mean(global), 1))
+```
+
+### Computador: ¿el computador, o el estrato disfrazado?
+
+> 📋 **Describir:** quienes tienen computador sacan unos 6 puntos más en
+> el puntaje global.
+>
+> ⚠️ Si nos quedamos ahí, el lector va a entender «el computador sube el
+> puntaje». Antes de decir eso hay que hacerse una pregunta: **¿quién
+> tiene computador?**
+
+```{r computador-estrato}
+s |>
+  filter(!is.na(estrato), !is.na(computador), estrato %in% c("1", "2", "3")) |>
+  group_by(estrato) |>
+  summarise(con_computador_pct = round(100 * mean(computador == "Si"), 1),
+            puntaje_con = round(mean(global[computador == "Si"]), 1),
+            puntaje_sin = round(mean(global[computador == "No"]), 1),
+            diferencia  = puntaje_con - puntaje_sin)
+```
+
+> 🔎 **Analizar:** en estrato 1 solo **la mitad** tiene computador; en
+> estrato 3, casi **nueve de cada diez**. Entonces «tener computador»
+> también está diciendo «ser de estrato más alto». Por eso hay que
+> comparar **dentro de un mismo estrato**: ahí la diferencia **baja de
+> 6,5 a entre 4 y 5 puntos**. **Conclusión:** una parte de la ventaja
+> del computador era el estrato disfrazado; otra parte se mantiene
+> aunque se compare a estudiantes del mismo estrato. **Decisión:** nunca
+> reportar la diferencia de un grupo sin preguntarse qué otra variable
+> viaja con él.
+>
+> Esto es exactamente la **variable confusora** de la paradoja de
+> Simpson, ahora con datos reales.
+
+### Género: el resumen que esconde
+
+> 📋 **Describir:** los hombres sacan unos 6 puntos más en razonamiento
+> cuantitativo; en lectura crítica los dos grupos están empatados; en el
+> puntaje global la diferencia es de un punto.
+>
+> 🔎 **Analizar:** la brecha de género **no es general, es de un
+> módulo**. Si solo se mira el puntaje global, la diferencia en
+> cuantitativo se diluye con los módulos donde no la hay, y se
+> concluiría que «no hay diferencias de género». **Decisión:** comparar
+> por módulo y no solo por el global, porque un resumen puede esconder
+> diferencias que van en direcciones distintas.
+
+## ¿Cuánto explica cada variable?
+
+Tenemos varias variables que «tienen que ver» con el puntaje. ¿Cuál pesa
+más?
+
+La idea es sencilla: la variación total del puntaje se puede partir en
+dos pedazos.
+
+| Pedazo                   | Qué es                                          |
+|--------------------------|-------------------------------------------------|
+| **Entre grupos**         | Cuánto se separan los promedios de los grupos   |
+| **Dentro de los grupos** | Cuánto varían los estudiantes de un mismo grupo |
+
+Si casi toda la variación está **dentro** de los grupos, la variable
+explica poco. Esto es la **ley de la varianza total**, dicha en
+palabras.
+
+```{r cuanto-explica}
+explica <- function(y, grupo) {
+  ok <- !is.na(y) & !is.na(grupo)
+  y <- y[ok]; grupo <- grupo[ok]
+  promedios <- tapply(y, grupo, mean)
+  tamanos   <- tapply(y, grupo, length)
+  sum(tamanos * (promedios - mean(y))^2) / sum((y - mean(y))^2)
+}
+
+data.frame(
+  variable = c("estrato", "computador", "internet", "género"),
+  porcentaje_explicado = round(100 * c(
+    explica(s$global, s$estrato),
+    explica(s$global, s$computador),
+    explica(s$global, s$internet),
+    explica(s$global, s$genero)), 1))
+```
+
+> 📋 **Describir:** el estrato explica el 5,7 % de la variación del
+> puntaje global; el computador, 3,7 %; internet, 3,4 %; el género, 0,2
+> %.
+>
+> 🔎 **Analizar:** la que más explica deja **el 94 % de la variación
+> entre estudiantes del mismo estrato**. Además, estrato, computador e
+> internet **no se pueden sumar** (5,7 + 3,7 + 3,4): acabamos de ver que
+> el computador en parte es el estrato, así que buena parte de esos
+> porcentajes es la misma información contada tres veces. **Conclusión
+> para el informe:** «el estrato determina el resultado» es falso con
+> estos datos; lo que sí se puede decir es «el estrato se asocia con el
+> resultado, pero pesa mucho menos que las diferencias entre
+> estudiantes». **Decisión:** si alguien quisiera predecir el puntaje,
+> el estrato solo no alcanza; hay que buscar otras variables.
+
+# Las variables juntas
+
+## ¿Qué módulos se mueven juntos?
+
+```{r correlacion}
+matriz <- cor(s[c(modulos, "inse")], use = "complete.obs")
+round(matriz, 2)
+corrplot(matriz, method = "color", type = "upper", addCoef.col = "black",
+         tl.col = "black", number.cex = 0.8, diag = FALSE)
+```
+
+> 📋 **Describir:** todas las correlaciones entre módulos son positivas;
+> la más alta es lectura con ciudadanas (0,64) y las más bajas son las
+> de escritura con los demás módulos (entre 0,23 y 0,31). El INSE tiene
+> correlaciones entre 0,12 y 0,27 con los módulos, y la mayor es con
+> inglés.
+>
+> 🔎 **Analizar:**
+>
+> - **Que todas sean positivas** significa que a quien le va bien en un
+>   módulo tiende a irle bien en los otros: puede haber **algo común**
+>   detrás de los cinco. Esa sospecha es la pregunta del PCA.
+> - **Lectura y ciudadanas van juntas porque piden lo mismo:** leer
+>   textos y argumentar. Escritura casi no se toca con los demás: es una
+>   habilidad distinta. Los números **agrupan las habilidades**.
+> - **El INSE pesa más en inglés.** Veámoslo en puntos y no en
+>   correlaciones:
+
+```{r inse-ingles}
+s |>
+  filter(!is.na(inse)) |>
+  mutate(cuarto_inse = cut(inse, quantile(inse, 0:4 / 4), include.lowest = TRUE,
+                           labels = c("25 % más bajo", "2.º", "3.º", "25 % más alto"))) |>
+  group_by(cuarto_inse) |>
+  summarise(ingles = round(mean(ingles, na.rm = TRUE), 1),
+            lectura = round(mean(lectura), 1))
+```
+
+> Entre el cuarto más bajo y el más alto del INSE, **inglés sube unos 14
+> puntos y lectura unos 10**. La lectura se aprende sobre todo en el
+> colegio; el inglés depende más de lo que la familia puede pagar por
+> fuera: cursos, viajes, internet, series sin doblar. **Decisión:** si
+> una universidad o una política quisiera cerrar brechas
+> socioeconómicas, inglés es donde la brecha es más grande.
+
+## Mirar la nube, no solo el número
+
+```{r pares, fig.height = 7}
+set.seed(28)
+muestra <- s[sample(nrow(s), 1500), modulos]
+ggpairs(muestra, lower = list(continuous = wrap("points", alpha = 0.15, size = 0.6)),
+        upper = list(continuous = wrap("cor", size = 4)))
+```
+
+> Usamos 1 500 estudiantes al azar para que el gráfico se pueda leer:
+> con 10 000 puntos todo se vuelve una mancha.
+
+> 📋 **Describir:** las nubes de puntos tienen forma de elipse inclinada
+> hacia arriba, sin curvas y sin grupos de puntos aparte. En inglés la
+> nube está **cortada abajo**: casi nadie tiene menos de 67.
+>
+> 🔎 **Analizar:** una elipse significa que la relación es **en línea
+> recta**, así que el número de la correlación **sí resume bien** lo que
+> pasa; si la nube fuera una curva o dos manchas, la correlación nos
+> engañaría. Y que no haya manchas aparte significa que **no hay tipos
+> de estudiantes escondidos** en estos cinco módulos. **Decisión:**
+> podemos seguir trabajando con correlaciones y covarianzas, que es lo
+> que usan PCA y factorial. (Si no hubiéramos convertido los ceros de
+> inglés en faltantes, aquí aparecería una fila de puntos pegada al
+> borde.)
+>
+> 🔎 **Y el corte de inglés:** la prueba de inglés tiene un **piso** —
+> por debajo de cierto nivel todos quedan con un puntaje parecido —, así
+> que no distingue bien entre los que menos saben. Eso **achica un
+> poco** las correlaciones de inglés. **Decisión:** tenerlo presente
+> cuando inglés aparezca más débil que los demás módulos en las técnicas
+> que vienen.
+
+## Una variable que sobra
+
+```{r redundancia}
+promedio_modulos <- rowMeans(s[modulos], na.rm = TRUE)
+cor(promedio_modulos, s$global, use = "complete.obs")
+```
+
+> 📋 **Describir:** el puntaje global y el promedio de los cinco módulos
+> tienen correlación 0,99.
+>
+> 🔎 **Analizar:** son **casi la misma variable**: el global no trae
+> información nueva, es un resumen de los módulos. **Decisión:** en
+> cualquier análisis que use los módulos, el global sobra. Si lo
+> dejáramos, estaríamos contando lo mismo dos veces.
+>
+> Esto va a importar mucho en las próximas sesiones: **dos variables que
+> miden lo mismo rompen varias de las técnicas multivariadas.**
+
+# La puerta a lo multivariado
+
+Con todo lo que vimos hoy quedaron **tres preguntas abiertas**, y cada
+una es una unidad del resto del semestre:
+
+| Lo que vimos hoy | La pregunta que queda | Dónde se responde |
+|----|----|----|
+| Revisamos los datos **variable por variable** | ¿Hay estudiantes que son raros **en la combinación**, aunque ninguna nota sea extrema? | **Sáb 3 oct** · Mahalanobis |
+| Los cinco módulos **se mueven juntos** | ¿Hay **una sola habilidad** detrás de los cinco? ¿O dos? | **17 y 19 oct** · PCA · **24 y 26 oct** · factorial |
+| Los estratos **difieren en promedio pero se montan** | ¿Difieren en **el perfil completo** de cinco módulos, no solo en el global? | **31 oct – 9 nov** · Hotelling y MANOVA |
+
+> **Todo lo que viene usa estos mismos datos, ya limpios.** Lo que
+> hicimos hoy no fue un repaso: fue dejar lista la base del semestre.
+
+# Actividad práctica
+
+Con **el dataset de su equipo**, en parejas:
+
+## Parte 1 — Calidad
+
+Busquen en su base **un problema de calidad** del tipo que vimos hoy:
+una categoría que no debería existir, un valor imposible, un número mal
+escrito. Muéstrenlo y digan qué decidirían hacer.
+
+## Parte 2 — Comparar grupos
+
+Escojan una variable categórica y comparen una numérica entre sus grupos
+con un boxplot. Respondan: **¿los promedios difieren? ¿Los grupos se
+montan o se separan?**
+
+## Parte 3 — Cuánto explica
+
+Usen la función `explica()` con esa misma pareja de variables. ¿Qué
+porcentaje de la variación explica la categórica? ¿Es mucho o poco?
+
+## Parte 4 — Lo que sobra
+
+Busquen en su matriz de correlación **dos variables que midan casi lo
+mismo**. Si no hay, digan cuál es el par más fuerte y qué significa en
+su problema.
+
+# Preguntas conceptuales
+
+1.  ¿Por qué los ocho valores del INSE eran **errores** y no
+    **atípicos**? ¿Qué cambia en la decisión?
+2.  Si el estrato explica el 6 % de la variación del puntaje, ¿es
+    correcto decir que «el estrato no importa»? ¿Por qué?
+3.  ¿Qué diferencia hay entre que dos grupos **tengan promedios
+    distintos** y que **se puedan separar**?
+4.  Si el puntaje global y el promedio de los módulos están
+    correlacionados 0,99, ¿qué pasa si se dejan los dos en un análisis?
+5.  ¿Por qué el género muestra una diferencia en cuantitativo que casi
+    desaparece en el puntaje global?
+
+# Conclusión
+
+Hoy no aprendimos ninguna técnica nueva. Aprendimos **para qué sirven**
+las que ya teníamos:
+
+- **Revisar la calidad** sirvió para descubrir que ocho errores de
+  digitación escondían una relación real.
+- **Mirar cada variable** sirvió para saber que los módulos están en la
+  misma escala y que los ceros de inglés son sospechosos.
+- **Comparar grupos** sirvió para ver que el estrato se asocia con el
+  puntaje, pero no lo determina.
+- **Mirar las variables juntas** sirvió para encontrar qué habilidades
+  van de la mano y qué variable sobra.
+
+Cada una de esas preguntas se va a volver a abrir con herramientas más
+potentes.
+
+# Próxima clase
+
+**Sábado 3 de octubre · Normal multivariante, distancia de Mahalanobis y
+gráfico Q-Q.**
+
+La pregunta: *revisamos los datos variable por variable; ¿hay
+estudiantes que son raros en la combinación de sus cinco módulos, aunque
+ninguna nota por separado sea extrema?*
+
+Traigan la base limpia de hoy.

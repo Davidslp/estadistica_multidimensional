@@ -1,0 +1,162 @@
+---
+title: "Análisis Exploratorio de Datos: Indicadores Educativos Municipales Colombia 2024"
+author: 
+  - "David Lugo - Cod:20222020180"
+  - "Luisa Fernández Velasco López - Cod:20212020106"
+  - "Jairo Arturo Barrera Mosquera - Cod:20222020142"
+  - "Gabriela Martinez Silva - Cod:20231020205"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    highlight: tango
+    code_folding: show    
+    df_print: paged
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+echo = TRUE,
+warning = FALSE, 
+message = FALSE,
+fig.align = "center", 
+fig.width = 8, 
+fig.height = 6,
+dpi = 300,
+out.width = "85%"
+)
+#Paquetes que se usan en el documento
+paquetes <- c("ggplot2", "dplyr", "tidyr", "reshape2", "knitr", "corrplot")
+faltantes <- paquetes[!vapply(paquetes, requireNamespace, logical(1), quietly = TRUE)]
+if (length(faltantes) > 0) install.packages(faltantes)
+#Librerias que se usan en el documento 
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(corrplot)
+library(knitr)
+library(DT)
+# Definición de rutas (Adaptado de tu código original)
+datos <- read.csv("educacion_limpio.csv")
+
+```
+
+# Introducción
+
+El presente documento tiene como objetivo analizar un conjunto de datos
+que contiene los indicadores educativos a nivel municipal en Colombia
+correspondientes al año 2024. Este dataset esta compuesto por 15.707
+filas y 36 variables, fue obtenido a través de Kaggle y recopila
+información oficial suministrada por el Ministerio de Educación
+Nacional.
+
+Para llevar a cabo el análisis de manera óptima se iniciara con la
+clasificación de los datos en variables numéricas y categóricas. Esto
+nos permitirá definir el tratamiento adecuado para cada tipo de
+información.
+
+Se emplearán histogramas para visualizar cómo se distribuyen los datos
+numéricos de forma individual. Asimismo, se utilizarán diagramas de caja
+(boxplots) con las variables numéricas normalizadas, lo que nos ayudará
+a identificar la mediana, los cuartiles y los valores atípicos. Por otro
+lado, las variables categóricas se utilizarán para organizar y comparar
+la información mediante frecuencias.
+
+Posteriormente se llevarán a cabo cruces entre variables para
+identificar relaciones específicas mediante gráficos de dispersión, lo
+que nos permitirá comprender el comportamiento conjunto de dos
+indicadores.
+
+Luego Se construirá una matriz de correlación que estará representada en
+un mapa de calor (heatmap) para observar matemáticamente la relación
+simultánea entre todas las variables numéricas. Esta herramienta será
+fundamental para generar hipótesis sobre qué factores educativos crecen
+o disminuyen en conjunto.
+
+# Descripción del conjunto de datos
+
+El dataset esta compuesto originalmente por 15.707 registros y 36
+variables. Su propósito es reunir información relacionada con distintos
+indicadores educativos de los municipios de Colombia durante el año
+2024, proporcionando una perspectiva territorial sobre las condiciones y
+características del sector educativo. Cada registro permite asociar
+diferentes variables e indicadores con un municipio determinado. A
+continuación, se describen las variables del conjunto de datos
+estructuradas por categoría metodológica.
+
+#### 1. Variables de Identificación Geográfica
+
+| Variable | Tipo Original | Descripción |
+|:---|:---|:---|
+| `CÓDIGO_MUNICIPIO` | Entero | Código DANE único del municipio |
+| `MUNICIPIO` | Texto | Nombre del municipio |
+| `CÓDIGO_DEPARTAMENTO` | Entero | Código DANE del departamento |
+| `DEPARTAMENTO` | Texto | Nombre del departamento |
+| `CÓDIGO_ETC` | Entero | Código de la Entidad Territorial Certificada |
+| `ETC` | Texto | Nombre de la Entidad Territorial Certificada |
+
+#### 2. Variables Demográficas
+
+| Variable | Tipo Original | Descripción |
+|:-----------------------|:-----------------------|:-----------------------|
+| `POBLACIÓN_5_16` | Entero | Población total entre 5 y 16 años en el municipio |
+
+#### 3. Variables de Matrícula y Cobertura
+
+| Variable | Tipo Original | Clasificación | Descripción |
+|:-----------------|:-----------------|:-----------------|:-----------------|
+| `TASA_MATRICULACIÓN_5_16` | Float | **Numérica** | \% de población de 5-16 años matriculada en el sistema educativo |
+| `COBERTURA_NETA` | Float | **Numérica** | \% de población en edad escolar matriculada en el nivel correspondiente (general) |
+| `COBERTURA_NETA_TRANSICIÓN` | Float | **Numérica** | Cobertura neta en nivel de transición (preescolar) |
+| `COBERTURA_NETA_PRIMARIA` | Float | **Numérica** | Cobertura neta en educación primaria |
+| `COBERTURA_NETA_SECUNDARIA` | Float | **Numérica** | Cobertura neta en educación secundaria |
+| `COBERTURA_NETA_MEDIA` | Float | **Numérica** | Cobertura neta en educación media |
+| `COBERTURA_BRUTA` | Float | **Numérica** | \% de población total matriculada, sin importar edad (general) |
+| `COBERTURA_BRUTA_TRANSICIÓN` | Float | **Numérica** | Cobertura bruta en transición |
+| `COBERTURA_BRUTA_PRIMARIA` | Float | **Numérica** | Cobertura bruta en primaria |
+| `COBERTURA_BRUTA_SECUNDARIA` | Float | **Numérica** | Cobertura bruta en secundaria |
+| `COBERTURA_BRUTA_MEDIA` | Float | **Numérica** | Cobertura bruta en media |
+
+#### 4. Variables de eficiencia
+
+| Variable | Tipo Original | Clasificación | Descripción |
+|:-----------------|:-----------------|:-----------------|:-----------------|
+| `DESERCIÓN` | Float | **Categórica** | Tasa general de deserción escolar (abandono del sistema) |
+| `DESERCIÓN_TRANSICIÓN` | Float | **Categórica** | Deserción en nivel de transición |
+| `DESERCIÓN_PRIMARIA` | Float | **Categórica** | Deserción en educación primaria |
+| `DESERCIÓN_SECUNDARIA` | Float | **Categórica** | Deserción en educación secundaria |
+| `DESERCIÓN_MEDIA` | Float | **Categórica** | Deserción en educación media (variable clave) |
+| `APROBACIÓN` | Float | **Categórica** | Tasa general de aprobación (estudiantes que pasan de grado) |
+| `APROBACIÓN_TRANSICIÓN` | Float | **Categórica** | Aprobación en transición |
+| `APROBACIÓN_PRIMARIA` | Float | **Categórica** | Aprobación en primaria |
+| `APROBACIÓN_SECUNDARIA` | Float | **Categórica** | Aprobación en secundaria |
+| `APROBACIÓN_MEDIA` | Float | **Categórica** | Aprobación en educación media (variable objetivo) |
+| `REPROBACIÓN` | Float | **Numérica** | Tasa general de reprobación (estudiantes que pierden el grado) |
+| `REPROBACIÓN_TRANSICIÓN` | Float | **Numérica** | Reprobación en transición |
+| `REPROBACIÓN_PRIMARIA` | Float | **Numérica** | Reprobación en primaria |
+| `REPROBACIÓN_SECUNDARIA` | Float | **Numérica** | Reprobación en secundaria |
+| `REPROBACIÓN_MEDIA` | Float | **Numérica** | Reprobación en educación media |
+| `REPITENCIA` | Float | **Numérica** | Tasa general de repitencia (estudiantes que cursan nuevamente el mismo grado) |
+| `REPITENCIA_TRANSICIÓN` | Float | **Numérica** | Repitencia en transición |
+| `REPITENCIA_PRIMARIA` | Float | **Numérica** | Repitencia en primaria |
+| `REPITENCIA_SECUNDARIA` | Float | **Numérica** | Repitencia en secundaria |
+| `REPITENCIA_MEDIA` | Float | **Numérica** | Repitencia en educación media |
+
+#### 5. Variables de Infraestructura Educativa
+
+| Variable | Tipo Original | Clasificación | Descripción |
+|:-----------------|:-----------------|:-----------------|:-----------------|
+| `TAMAÑO_PROMEDIO_DE_GRUPO` | Float | **Numérica** | Promedio de estudiantes por grupo académico |
+| `SEDES_CONECTADAS_A_INTERNET` | Float | **Categórica** | Proporción de sedes educativas con conexión a internet |
+
+```{r dimensiones}
+dim(datos) 
+str(datos)
+summary(datos)
+```
