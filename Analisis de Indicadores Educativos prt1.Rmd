@@ -114,9 +114,9 @@ str(datos)
 
 #### 2. Variables Demográficas
 
-| Variable | Tipo Original | Descripción |
-|:-----------------------|:-----------------------|:-----------------------|
-| `POBLACIÓN_5_16` | Entero | Población total entre 5 y 16 años en el municipio |
+| Variable | Clasificación | Tipo Original | Descripción |
+|:------------------|-----------------|:------------------|:------------------|
+| `POBLACIÓN_5_16` | **Numérica** | Entero | Población total entre 5 y 16 años en el municipio |
 
 #### 3. Variables de Matrícula y Cobertura
 
@@ -187,35 +187,18 @@ texto o como valores válidos dentro de las variables.
 datos[datos == "" | datos == " "] <- NA
 ```
 
-## Transformación de datos
-
-Para garantizar un flujo de trabajo que sea fluido y evitar fallos en la
-ejecución de las funciones estadísticas como el cálculo de matrices de
-covarianza, correlaciones y algoritmos de normalización es necesario
-implementar una previa transformación. Este proceso consistie en
-sustituir los separadores decimales, eliminar los caracteres
-alfanuméricos y forzar la conversión de estas columnas a un formato
-numérico continuo (float), asegurando así la integridad y la correcta
-manipulación matemática de la información.
+Procedemos a revisar cual es el porcentaje de datos faltantes por
+columna para saber con que datos nos sirven para que sea posible
+analizar mejor el conjunto de datos.
 
 ```{r}
-# Esta funcion me permite trasformar mis datos para que ya no esten como porcentaje sino como decimal
-limpiar_porcentajes <- function(x) {
-  if (is.character(x)) {
-    x <- as.numeric(gsub(",", ".", gsub("%", "", x))) / 100
-  }
-  return(x)
-}
-
-# Aplicar la conversión a todas las columnas de tasas y coberturas
-datos_transformados <- datos %>%
-  mutate(across(
-    starts_with("TASA") | starts_with("COBERTURA") | starts_with("DESERCIÓN") | 
-      starts_with("APROBACIÓN") | starts_with("REPROBACIÓN") | starts_with("REPITENCIA"),
-    limpiar_porcentajes
-  ))
+porcentaje_nulos <- round(colMeans(is.na(datos)) * 100, 2) 
 
 ```
+
+Luego de revisar que los datos NA no superan mas del 1% en las filas y
+que el mayor problema esta en las variables TAMAÑO_PROMEDIO_DE_GRUPO y
+SEDES_CONECTADAS_A_INTERNET procedemos con el siguiente paso.
 
 ## Exclusión y selección de variables para el análisis
 
@@ -255,3 +238,642 @@ variables_a_excluir <- c(
 datos_excluidos <- datos %>%
   select(-any_of(variables_a_excluir))
 ```
+
+## Transformación de datos
+
+Para garantizar un flujo de trabajo que sea fluido y evitar fallos en la
+ejecución de las funciones estadísticas como el cálculo de matrices de
+covarianza, correlaciones y algoritmos de normalización es necesario
+implementar una previa transformación. Este proceso consistie en
+sustituir los separadores decimales, eliminar los caracteres
+alfanuméricos y forzar la conversión de estas columnas a un formato
+numérico continuo (float), asegurando así la integridad y la correcta
+manipulación matemática de la información.
+
+```{r}
+# Esta funcion me permite trasformar mis datos para que ya no esten como porcentaje sino como decimal
+limpiar_porcentajes <- function(x) {
+  if (is.character(x)) {
+    x <- as.numeric(gsub(",", ".", gsub("%", "", x))) / 100
+  }
+  return(x)
+}
+
+# Aplicar la conversión a todas las columnas de tasas y coberturas
+datos_transformados <- datos %>%
+  mutate(across(
+    starts_with("TASA") | starts_with("COBERTURA") | starts_with("DESERCIÓN") | 
+      starts_with("APROBACIÓN") | starts_with("REPROBACIÓN") | starts_with("REPITENCIA"),
+    limpiar_porcentajes
+  ))
+
+```
+
+Finalmente creamos un data set en el cual se efectuan todos los cambios
+anteriores para asi poder tener datos con los cuales nos van a ser
+posible trabajar y no tener problemas
+
+```{r}
+# Unificamos la exclusión de variables, la transformación numérica 
+# y la eliminación de las filas con datos faltantes restantes.
+educacion_limpio <- datos %>%
+  # 1. Excluir variables no relevantes o con exceso de nulos
+  select(-any_of(variables_a_excluir)) %>%
+  # 2. Transformar porcentajes a decimales numéricos
+  mutate(across(
+    starts_with("TASA") | starts_with("COBERTURA") | starts_with("DESERCIÓN") | 
+      starts_with("APROBACIÓN") | starts_with("REPROBACIÓN") | starts_with("REPITENCIA"),
+    limpiar_porcentajes
+  )) %>%
+  # 3. Eliminar filas incompletas (Listwise deletion) ya que representan menos del 1%
+  na.omit()
+
+# Verificar las dimensiones finales del dataset limpio
+dim(educacion_limpio)
+```
+
+# Análisis Univariado
+
+#### 1. MUNICIPIO: Categórica
+
+```{r}
+
+datos_mun <- educacion_limpio %>%
+  count(MUNICIPIO, sort = TRUE) %>%
+  head(25) # Puedes ajustar este número si deseas ver más o menos
+
+# Gráfico de barras de frecuencia
+ggplot(datos_mun, aes(x = fct_reorder(MUNICIPIO, n), y = n)) +
+  geom_col(fill = "#3498db", color = "white") +
+  coord_flip() +
+  theme_minimal() +
+  labs(
+    title = "Frecuencia de Aparición por Municipio",
+    subtitle = "Top 25 de municipios con mayor registro en el dataset",
+    x = "Municipio",
+    y = "Cantidad de veces (Frecuencia)"
+  ) +
+  theme(
+    axis.text.y = element_text(size = 8),
+    plot.title = element_text(face = "bold", size = 14)
+  )
+```
+
+#### 2. DEPARTAMENTO: Categórica
+
+```{r}
+ggplot(educacion_limpio, aes(x = fct_infreq(DEPARTAMENTO))) +
+  geom_bar(fill = "#8e44ad", color = "white") +
+  coord_flip() +
+  theme_minimal() +
+  labs(
+    title = "Frecuencia de Registros por Departamento",
+    subtitle = "Análisis univariado de la variable categórica DEPARTAMENTO",
+    x = "Departamento",
+    y = "Cantidad de Municipios (Frecuencia)"
+  ) +
+  theme(
+    axis.text.y = element_text(size = 8, face = "bold"),
+    plot.title = element_text(face = "bold", size = 14),
+    panel.grid.minor = element_blank()
+  )
+```
+
+#### 3. POBLACIÓN_5_16: Numérica
+
+##### histograma 
+
+```{r}
+# Histograma filtrando poblaciones menores a 50,000
+educacion_limpio %>%
+  filter(POBLACIÓN_5_16 < 50000) %>%
+  ggplot(aes(x = POBLACIÓN_5_16)) +
+  geom_histogram(bins = 30, fill = "seagreen", color = "white") +
+  labs(
+    title = "Distribución de la Población (Municipios < 50k hab)",
+    x = "Población (5-16 años)",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
+
+##### boxplot
+
+```{r }
+# Boxplot con filtro
+educacion_limpio %>%
+  filter(POBLACIÓN_5_16 < 50000) %>%
+  ggplot(aes(y = POBLACIÓN_5_16)) +
+  geom_boxplot(fill = "tomato", color = "black", alpha = 0.7) +
+  labs(
+    title = "Diagrama de Caja (Municipios < 50k hab)",
+    y = "Población (5-16 años)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+#### 4. TASA_MATRICULACIÓN_5_16: Numérica
+
+##### histograma
+
+```{r}
+educacion_limpio %>%
+  filter(TASA_MATRICULACIÓN_5_16 >= 0 & TASA_MATRICULACIÓN_5_16 <= 1.25) %>%
+  ggplot(aes(x = TASA_MATRICULACIÓN_5_16)) +
+  geom_histogram(bins = 40, fill = "mediumseagreen", color = "white") +
+  labs(
+    title = "Distribución de la Tasa de Matriculación (5 a 16 años)",
+    subtitle = "Excluyendo valores atípicos mayores a 1.25",
+    x = "Tasa de Matriculación",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
+
+##### boxplot
+
+```{r}
+educacion_limpio %>%
+  filter(TASA_MATRICULACIÓN_5_16 >= 0 & TASA_MATRICULACIÓN_5_16 <= 1.25) %>%
+  ggplot(aes(y = TASA_MATRICULACIÓN_5_16)) +
+  geom_boxplot(fill = "orange", color = "black", alpha = 0.7) +
+  labs(
+    title = "Diagrama de Caja de la Tasa de Matriculación",
+    subtitle = "Enfocado en el rango principal (0 a 1.25)",
+    y = "Tasa de Matriculación (5-16 años)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+```
+
+#### 5. COBERTURA_NETA: Numérica
+
+##### histograma
+
+```{r}
+# Histograma filtrando valores atípicos (coberturas mayores a 1.25 o 125%)
+educacion_limpio %>%
+  filter(COBERTURA_NETA >= 0 & COBERTURA_NETA <= 1.25) %>%
+  ggplot(aes(x = COBERTURA_NETA)) +
+  geom_histogram(bins = 40, fill = "dodgerblue", color = "white") +
+  labs(
+    title = "Distribución de la Cobertura Neta",
+    subtitle = "Excluyendo valores atípicos mayores a 1.25",
+    x = "Cobertura Neta",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
+
+##### boxplot
+
+```{r}
+# Boxplot enfocado en el rango principal
+educacion_limpio %>%
+  filter(COBERTURA_NETA >= 0 & COBERTURA_NETA <= 1.25) %>%
+  ggplot(aes(y = COBERTURA_NETA)) +
+  geom_boxplot(fill = "gold", color = "black", alpha = 0.7) +
+  labs(
+    title = "Diagrama de Caja de la Cobertura Neta",
+    subtitle = "Rango ajustado (0 a 1.25)",
+    y = "Cobertura Neta"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+```
+
+#### 6. COBERTURA_NETA_TRANSICIÓN: Numérica
+
+##### histograma
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_NETA_TRANSICIÓN >= 0 & COBERTURA_NETA_TRANSICIÓN <= 1.25) %>%
+  ggplot(aes(x = COBERTURA_NETA_TRANSICIÓN)) +
+  geom_histogram(bins = 40, fill = "orchid", color = "white") +
+  labs(
+    title = "Distribución de la Cobertura Neta en Transición",
+    subtitle = "Excluyendo valores atípicos mayores a 1.25",
+    x = "Cobertura Neta (Transición)",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
+
+##### boxplot
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_NETA_TRANSICIÓN >= 0 & COBERTURA_NETA_TRANSICIÓN <= 1.25) %>%
+  ggplot(aes(y = COBERTURA_NETA_TRANSICIÓN)) +
+  geom_boxplot(fill = "turquoise", color = "black", alpha = 0.7) +
+  labs(
+    title = "Diagrama de Caja de la Cobertura Neta en Transición",
+    subtitle = "Rango ajustado (0 a 1.25)",
+    y = "Cobertura Neta (Transición)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+```
+
+#### 7. COBERTURA_NETA_PRIMARIA: Numérica
+
+#### histograma
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_NETA_PRIMARIA >= 0 & COBERTURA_NETA_PRIMARIA <= 1.25) %>%
+  ggplot(aes(x = COBERTURA_NETA_PRIMARIA)) +
+  geom_histogram(bins = 40, fill = "coral", color = "white") +
+  labs(
+    title = "Distribución de la Cobertura Neta en Primaria",
+    subtitle = "Excluyendo valores atípicos mayores a 1.25",
+    x = "Cobertura Neta (Primaria)",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
+
+##### boxplot
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_NETA_PRIMARIA >= 0 & COBERTURA_NETA_PRIMARIA <= 1.25) %>%
+  ggplot(aes(y = COBERTURA_NETA_PRIMARIA)) +
+  geom_boxplot(fill = "lightgreen", color = "black", alpha = 0.7) +
+  labs(
+    title = "Diagrama de Caja de la Cobertura Neta en Primaria",
+    subtitle = "Rango ajustado (0 a 1.25)",
+    y = "Cobertura Neta (Primaria)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+```
+
+#### 8. COBERTURA_NETA_SECUNDARIA: Numérica
+
+##### histograma
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_NETA_SECUNDARIA >= 0 & COBERTURA_NETA_SECUNDARIA <= 1.25) %>%
+  ggplot(aes(x = COBERTURA_NETA_SECUNDARIA)) +
+  geom_histogram(bins = 40, fill = "slateblue", color = "white") +
+  labs(
+    title = "Distribución de la Cobertura Neta en Secundaria",
+    subtitle = "Excluyendo valores atípicos mayores a 1.25",
+    x = "Cobertura Neta (Secundaria)",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
+
+##### boxplot
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_NETA_SECUNDARIA >= 0 & COBERTURA_NETA_SECUNDARIA <= 1.25) %>%
+  ggplot(aes(y = COBERTURA_NETA_SECUNDARIA)) +
+  geom_boxplot(fill = "khaki", color = "black", alpha = 0.7) +
+  labs(
+    title = "Diagrama de Caja de la Cobertura Neta en Secundaria",
+    subtitle = "Rango ajustado (0 a 1.25)",
+    y = "Cobertura Neta (Secundaria)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+```
+
+#### 9. COBERTURA_NETA_MEDIA: Numérica
+
+##### histograma
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_NETA_MEDIA >= 0 & COBERTURA_NETA_MEDIA <= 1.25) %>%
+  ggplot(aes(x = COBERTURA_NETA_MEDIA)) +
+  geom_histogram(bins = 40, fill = "firebrick", color = "white") +
+  labs(
+    title = "Distribución de la Cobertura Neta en Educación Media",
+    subtitle = "Excluyendo valores atípicos mayores a 1.25",
+    x = "Cobertura Neta (Media)",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
+
+##### boxplot
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_NETA_MEDIA >= 0 & COBERTURA_NETA_MEDIA <= 1.25) %>%
+  ggplot(aes(y = COBERTURA_NETA_MEDIA)) +
+  geom_boxplot(fill = "pink", color = "black", alpha = 0.7) +
+  labs(
+    title = "Diagrama de Caja de la Cobertura Neta en Educación Media",
+    subtitle = "Rango ajustado (0 a 1.25)",
+    y = "Cobertura Neta (Media)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+```
+
+#### 10. COBERTURA_BRUTA: Numérica
+
+##### histograma
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_BRUTA >= 0 & COBERTURA_BRUTA <= 1.50) %>%
+  ggplot(aes(x = COBERTURA_BRUTA)) +
+  geom_histogram(bins = 40, fill = "darkcyan", color = "white") +
+  labs(
+    title = "Distribución de la Cobertura Bruta",
+    subtitle = "Excluyendo valores atípicos mayores a 1.50",
+    x = "Cobertura Bruta",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
+
+##### boxplot
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_BRUTA >= 0 & COBERTURA_BRUTA <= 1.50) %>%
+  ggplot(aes(y = COBERTURA_BRUTA)) +
+  geom_boxplot(fill = "plum", color = "black", alpha = 0.7) +
+  labs(
+    title = "Diagrama de Caja de la Cobertura Bruta",
+    subtitle = "Rango ajustado (0 a 1.50)",
+    y = "Cobertura Bruta"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+```
+
+#### 11. COBERTURA_BRUTA_TRANSICIÓN: Numérica
+
+##### histograma
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_BRUTA_TRANSICIÓN >= 0 & COBERTURA_BRUTA_TRANSICIÓN <= 1.70) %>%
+  ggplot(aes(x = COBERTURA_BRUTA_TRANSICIÓN)) +
+  geom_histogram(bins = 30, fill = "hotpink", color = "white") +
+  labs(title = "Histograma: Cobertura Bruta Transición", x = "Tasa", y = "Frecuencia") +
+  theme_minimal()
+```
+
+##### boxplot
+
+```{r}
+educacion_limpio %>%
+  filter(COBERTURA_BRUTA_TRANSICIÓN >= 0 & COBERTURA_BRUTA_TRANSICIÓN <= 1.70) %>%
+  ggplot(aes(y = COBERTURA_BRUTA_TRANSICIÓN)) +
+  geom_boxplot(fill = "hotpink", alpha = 0.6) +
+  labs(title = "Boxplot: Cobertura Bruta Transición", y = "Tasa") +
+  theme_minimal() + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+#### 12. COBERTURA_BRUTA_PRIMARIA: Numérica
+
+##### histograma
+
+```{r}
+
+```
+
+##### boxplot
+
+```{r}
+
+```
+
+#### 13. COBERTURA_BRUTA_SECUNDARIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 14. COBERTURA_BRUTA_MEDIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 15. DESERCIÓN: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 16. DESERCIÓN_TRANSICIÓN: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 17. DESERCIÓN_PRIMARIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 18. DESERCIÓN_SECUNDARIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 19. DESERCIÓN_MEDIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 20. APROBACIÓN: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 21. APROBACIÓN_TRANSICIÓN: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 22. APROBACIÓN_PRIMARIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 23. APROBACIÓN_SECUNDARIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 24. APROBACIÓN_MEDIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 25. REPROBACIÓN: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 26. REPROBACIÓN_TRANSICIÓN: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 27. REPROBACIÓN_PRIMARIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 28. REPROBACIÓN_SECUNDARIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 29. REPROBACIÓN_MEDIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 30. REPITENCIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 31. REPITENCIA_TRANSICIÓN: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 32. REPITENCIA_PRIMARIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 33. REPITENCIA_SECUNDARIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
+
+#### 34. REPITENCIA_MEDIA: Numérica
+
+##### histograma
+
+\`\`\`{r}
+
+##### boxplot
+
+\`\`\`{r}
